@@ -17,26 +17,41 @@ from tool import (
     maxmap,
 )
 from seathru import run_pipeline
+import ctypes
+
+# contrast = ctypes.CDLL(os.path.abspath("./contrast.so"))
 
 # from contrast import integral_contrast
 
 import os
 
+
 img_path = os.path.abspath("./data_lr_2x/")
 depth_path = os.path.abspath("./depth_data/")
-result_path = os.path.abspath("./results")
+result_path = os.path.abspath("./results/")
 data = os.listdir(img_path)
 print("data lr 2x loaded")
 
 
 for i in range(len(data)):
-    path = img_path + data[i]
+    # path = img_path + data[i]
+    path = os.path.join(img_path, data[i])
     print(f"Processing {path}")
     print(data[i])
+
     depth_file = depth_path + "\\" + data[i][:-4] + ".npy"
-    print(f"depth_file : {depth_file}")
     depth = np.array(np.load(depth_file)).astype(np.float32)
     print(f"depth  : {depth}")
+
+    # Check if the depth file exists
+    if not os.path.exists(depth_file):
+        print(f"Depth file not found for {data[i]}. Skipping...")
+        continue
+
+    # Load depth data and convert to float32
+    depth = np.load(depth_file).astype(np.float32)
+    print(f"Depth data loaded with shape: {depth.shape}")
+
     i0 = load_image(path)
     (win, hei, _) = i0.shape
     depth = np.resize(depth, (win, hei))
@@ -58,7 +73,7 @@ for i in range(len(data)):
     i1 = np.maximum(i1, 0)
     i0 = np.maximum(i0, 0)
     i1 = maxmap(i0, i1, 1.2)
-    i1 = np.float32(integral_contrast(i1, 20, 20))
+    # i1 = np.float32(contrast.integral_contrast(i1, 20, 20))
     i1 = np.float32(np.minimum(np.maximum(i1, 0), 1))
     i1 = ada_color(i1)
     i2 = High_pass(i1, 5)
